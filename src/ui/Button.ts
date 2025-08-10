@@ -2,7 +2,7 @@ import { Container, Graphics, Text } from 'pixi.js';
 
 export class Button extends Container {
     private bg: Graphics;
-    private label: Text;
+    private caption: Text; // renamed to avoid clashing with DisplayObject.label:string
 
     constructor(text: string, width = 180, height = 56) {
         super();
@@ -12,13 +12,16 @@ export class Button extends Container {
             .fill(0x1f8ef1);
         this.addChild(this.bg);
 
-        this.label = new Text({
-            text,
-            style: { fill: 0xffffff, fontSize: 20, fontWeight: '700' },
+        this.caption = new Text(text, {
+            fill: 0xffffff,
+            fontSize: 20,
+            fontWeight: '700',
+            fontFamily: 'Inter, Arial, sans-serif',
+            align: 'center',
         });
-        this.label.anchor.set(0.5);
-        this.label.position.set(width / 2, height / 2);
-        this.addChild(this.label);
+        this.caption.anchor.set(0.5);
+        this.caption.position.set(width / 2, height / 2);
+        this.addChild(this.caption);
 
         this.eventMode = 'static';
         this.cursor = 'pointer';

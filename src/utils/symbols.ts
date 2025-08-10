@@ -26,18 +26,13 @@ export async function createSymbolTextures(
             .fill(tileColor)
             .stroke({ color: borderColor, width: 3 });
 
-        const text = new Text({
-            text: letter,
-            style: {
-                fill: textColor,
-                fontSize: Math.round(size * 0.45),
-                fontFamily: 'Inter, Arial, sans-serif',
-                fontWeight: '700',
-                align: 'center',
-                dropShadow: true,
-                dropShadowDistance: 2,
-                dropShadowBlur: 2,
-            },
+        // ✅ Pixi v8: use (text, style) signature
+        const text = new Text(letter, {
+            fill: textColor,
+            fontSize: Math.round(size * 0.45),
+            fontFamily: 'Inter, Arial, sans-serif',
+            fontWeight: '700',
+            align: 'center',
         });
         text.anchor.set(0.5);
         text.position.set(size / 2, size / 2);
