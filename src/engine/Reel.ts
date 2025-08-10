@@ -13,8 +13,8 @@ export class Reel {
     private viewportW: number;
     private viewportH: number;
 
-    private x: number; // left edge of reel viewport
-    private y: number; // top edge of reel viewport
+    private x: number;
+    private y: number;
 
     private texturesByLetter: Record<string, Texture>;
     private plannedEnd: string[] | null = null;
@@ -31,13 +31,13 @@ export class Reel {
         this.viewportW = SYMBOL_SIZE;
         this.viewportH = ROWS * SYMBOL_SIZE + (ROWS - 1) * SYMBOL_GAP;
 
-        // Mask for the reel viewport
+
         const mask = new Graphics()
             .roundRect(this.x, this.y, this.viewportW, this.viewportH, 12)
             .fill(0xffffff);
         this.view.mask = mask as any;
 
-        // Background panel
+
         const bg = new Graphics()
             .roundRect(this.x, this.y, this.viewportW, this.viewportH, 12)
             .fill(0x0f1629)
@@ -45,7 +45,6 @@ export class Reel {
 
         this.view.addChild(bg, mask);
 
-        // Build cells (centered)
         const step = SYMBOL_SIZE + SYMBOL_GAP;
         const total = ROWS + this.buffer * 2;
         const firstCenterY = this.y - this.buffer * step + SYMBOL_SIZE / 2;
@@ -59,7 +58,6 @@ export class Reel {
             spr.x = this.x + SYMBOL_SIZE / 2;
             spr.y = firstCenterY + i * step;
 
-            // random starting letter
             const letter = keys[(Math.random() * keys.length) | 0];
             spr.texture = this.texturesByLetter[letter];
             (spr as any).letter = letter;
@@ -73,7 +71,6 @@ export class Reel {
         this.speed = pxPerMs;
     }
 
-    /** Plan the exact letters for visible 3 rows (top→bottom) after stop */
     public plan(columnLetters: string[]) {
         this.plannedEnd = columnLetters.slice(0, ROWS);
     }
@@ -94,7 +91,6 @@ export class Reel {
         }
     }
 
-    /** Align all cells to perfect grid centers, reset any pulse scale */
     private snapToGrid() {
         const step = SYMBOL_SIZE + SYMBOL_GAP;
         const firstCenterY = this.y - this.buffer * step + SYMBOL_SIZE / 2;
@@ -107,7 +103,6 @@ export class Reel {
         }
     }
 
-    /** Per-frame update; smooth recycle with center-based math */
     public update(deltaMS: number) {
         if (this.speed === 0) return;
 
@@ -120,13 +115,13 @@ export class Reel {
         const bottomEdge = this.y + this.viewportH;
         const offscreenCenterY = bottomEdge + SYMBOL_SIZE / 2;
 
-        // recycle bottom-most → above top-most
+
         while (this.cells[this.cells.length - 1].y >= offscreenCenterY) {
             const last = this.cells.pop()!;
             const topY = this.cells[0].y;
             last.y = topY - step;
 
-            // assign a new random letter
+
             const keys = Object.keys(this.texturesByLetter);
             const letter = keys[(Math.random() * keys.length) | 0];
             last.texture = this.texturesByLetter[letter];
@@ -137,7 +132,7 @@ export class Reel {
         }
     }
 
-    /** Get sprite for visible row (0=top,1=mid,2=bot) */
+
     public getVisibleSprite(row: number) {
         return this.cells[this.buffer + row];
     }

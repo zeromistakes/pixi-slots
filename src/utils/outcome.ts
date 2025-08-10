@@ -6,7 +6,7 @@ export function generateOutcome(forceWin = false): string[][] {
         Array.from({ length: ROWS }, () => choice(SYMBOLS))
     );
     if (forceWin || rand() < 0.25) {
-        const row = 1; // middle row to keep it obvious
+        const row = 1;
         const sym = choice(SYMBOLS);
         for (let c = 0; c < REELS; c++) grid[c][row] = sym;
     }

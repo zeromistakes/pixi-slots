@@ -2,7 +2,7 @@ import { Container, Graphics, Text } from 'pixi.js';
 
 export class Button extends Container {
     private bg: Graphics;
-    private caption: Text; // renamed to avoid clashing with DisplayObject.label:string
+    private caption: Text;
 
     constructor(text: string, width = 180, height = 56) {
         super();

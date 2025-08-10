@@ -1,4 +1,4 @@
-// src/main.ts
+
 import { Application, type Ticker, Sprite } from 'pixi.js';
 import {
     SYMBOLS,
@@ -17,16 +17,16 @@ import { Button } from './ui/Button';
 import { generateOutcome } from './utils/outcome';
 import { evaluate } from './engine/Paylines';
 
-// Pulse animation store
+
 type Pulse = { spr: Sprite & { letter?: string }; t: number; dur: number };
 const pulses: Pulse[] = [];
 
-// Texture sets (normal and red letters)
+
 let normalTexMap: TextureMap;
 let winTexMap: TextureMap;
 
 function pulseSprite(spr: Sprite & { letter?: string }, dur = 900) {
-    // swap to red letter for the duration of the pulse
+
     const letter = spr.letter as keyof TextureMap | undefined;
     if (letter && winTexMap?.[letter]) {
         spr.texture = winTexMap[letter];
@@ -41,7 +41,6 @@ async function boot(): Promise<void> {
     document.body.style.margin = '0';
     document.body.appendChild(app.canvas);
 
-    // Build normal + red letter textures
     normalTexMap = await createSymbolTextures(app, SYMBOLS, SYMBOL_SIZE, {
         textColor: LETTER_COLOR_NORMAL,
     });
@@ -49,13 +48,11 @@ async function boot(): Promise<void> {
         textColor: LETTER_COLOR_WIN,
     });
 
-    // Layout sizes
     const boardW = REELS * SYMBOL_SIZE + (REELS - 1) * REEL_GAP;
     const boardH = ROWS * SYMBOL_SIZE + (ROWS - 1) * SYMBOL_GAP;
     const startX = (app.renderer.width - boardW) / 2;
     const startY = (app.renderer.height - boardH) / 2;
 
-    // Reels
     const reels: Reel[] = [];
     for (let i = 0; i < REELS; i++) {
         const x = startX + i * (SYMBOL_SIZE + REEL_GAP);
@@ -68,26 +65,22 @@ async function boot(): Promise<void> {
         reels.push(reel);
     }
 
-    // Spin button
     const btn = new Button('SPIN');
     btn.position.set((app.renderer.width - 180) / 2, startY + boardH + 24);
     app.stage.addChild(btn);
 
     let busy = false;
 
-    // Use a small cast to avoid TS noise about event name generics
     (btn as any).on('pointertap', () => {
         if (busy) return;
         busy = true;
         btn.setEnabled(false);
 
-        // Decide the outcome (columns: [reel][rowTop..bottom])
+
         const outcome = generateOutcome();
 
-        // Start reels
         reels.forEach((r) => r.setSpeed(1.3));
 
-        // Plan + stop with stagger
         const base = 1000;
         const gap = 300;
 
@@ -97,7 +90,7 @@ async function boot(): Promise<void> {
             setTimeout(() => {
                 r.stop();
 
-                // after last reel stops
+
                 if (i === reels.length - 1) {
                     busy = false;
                     btn.setEnabled(true);
@@ -118,7 +111,7 @@ async function boot(): Promise<void> {
         });
     });
 
-    // Ticker: update reels + run pulses
+
     app.ticker.add((ticker: Ticker) => {
         reels.forEach((r) => r.update(ticker.deltaMS));
 
@@ -131,7 +124,7 @@ async function boot(): Promise<void> {
             p.spr.alpha = 0.95 + Math.sin(k * Math.PI) * 0.05;
 
             if (p.t >= p.dur) {
-                // restore normal texture/scale
+
                 const letter = p.spr.letter as keyof TextureMap | undefined;
                 if (letter && normalTexMap?.[letter]) {
                     p.spr.texture = normalTexMap[letter];

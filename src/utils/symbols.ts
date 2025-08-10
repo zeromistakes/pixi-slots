@@ -26,7 +26,6 @@ export async function createSymbolTextures(
             .fill(tileColor)
             .stroke({ color: borderColor, width: 3 });
 
-        // ✅ Pixi v8: use (text, style) signature
         const text = new Text(letter, {
             fill: textColor,
             fontSize: Math.round(size * 0.45),

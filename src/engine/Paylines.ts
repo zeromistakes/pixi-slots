@@ -4,11 +4,9 @@ export type Cell = { c: number; r: number }; // column, row
 export type Line = [Cell, Cell, Cell];
 
 export const PAYLINES: Line[] = [
-    // horizontals
     [{ c: 0, r: 0 }, { c: 1, r: 0 }, { c: 2, r: 0 }],
     [{ c: 0, r: 1 }, { c: 1, r: 1 }, { c: 2, r: 1 }],
     [{ c: 0, r: 2 }, { c: 1, r: 2 }, { c: 2, r: 2 }],
-    // diagonals
     [{ c: 0, r: 0 }, { c: 1, r: 1 }, { c: 2, r: 2 }],
     [{ c: 0, r: 2 }, { c: 1, r: 1 }, { c: 2, r: 0 }],
 ];
