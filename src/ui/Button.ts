@@ -1,4 +1,3 @@
-
 import { Container, Graphics, Text } from 'pixi.js';
 
 export class Button extends Container {
@@ -23,7 +22,6 @@ export class Button extends Container {
 
         this.eventMode = 'static';
         this.cursor = 'pointer';
-        this.alpha = 1;
     }
 
     setEnabled(v: boolean) {

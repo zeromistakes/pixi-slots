@@ -1,9 +1,31 @@
-
-import { Application, type Ticker } from 'pixi.js';
-import { SYMBOLS, SYMBOL_SIZE, REEL_GAP, SYMBOL_GAP, REELS, ROWS } from './utils/constants';
-import { createSymbolTextures } from './utils/symbols';
-import { Reel } from './engine/Reel';
+import { Application, type Ticker, Sprite } from 'pixi.js';
+import {
+    SYMBOLS, SYMBOL_SIZE, REEL_GAP, SYMBOL_GAP, REELS, ROWS,
+    PULSE_EXTRA, LETTER_COLOR_NORMAL, LETTER_COLOR_WIN
+} from './utils/constants';
+import { createSymbolTextures, type TextureMap } from './utils/symbols';
+import { Reel, BASE_SCALE } from './engine/Reel';
 import { Button } from './ui/Button';
+import { generateOutcome } from './utils/outcome';
+import { evaluate } from './engine/Paylines';
+
+
+type Pulse = { spr: Sprite & { letter?: string }, t: number, dur: number };
+const pulses: Pulse[] = [];
+
+
+let normalTexMap: TextureMap;
+let winTexMap: TextureMap;
+
+function pulseSprite(spr: Sprite & { letter?: string }, dur = 900) {
+    // swap to RED letter texture at the start of pulse (if we know the letter)
+    const letter = spr.letter as keyof TextureMap | undefined;
+    if (letter && winTexMap && winTexMap[letter]) {
+        spr.texture = winTexMap[letter];
+    }
+    spr.alpha = 1;
+    pulses.push({ spr, t: 0, dur });
+}
 
 async function boot(): Promise<void> {
     const app = new Application();
@@ -11,10 +33,17 @@ async function boot(): Promise<void> {
     document.body.style.margin = '0';
     document.body.appendChild(app.canvas);
 
-    const textures = await createSymbolTextures(app, SYMBOLS, SYMBOL_SIZE);
-    const texArray = SYMBOLS.map(s => textures[s]);
 
-    // layout
+    normalTexMap = await createSymbolTextures(app, SYMBOLS, SYMBOL_SIZE, {
+        textColor: LETTER_COLOR_NORMAL
+    });
+    winTexMap = await createSymbolTextures(app, SYMBOLS, SYMBOL_SIZE, {
+        textColor: LETTER_COLOR_WIN
+    });
+
+    const texArray = SYMBOLS.map(s => normalTexMap[s]);
+
+
     const boardW = REELS * SYMBOL_SIZE + (REELS - 1) * REEL_GAP;
     const boardH = ROWS * SYMBOL_SIZE + (ROWS - 1) * SYMBOL_GAP;
     const startX = (app.renderer.width - boardW) / 2;
@@ -24,7 +53,11 @@ async function boot(): Promise<void> {
     const reels: Reel[] = [];
     for (let i = 0; i < REELS; i++) {
         const x = startX + i * (SYMBOL_SIZE + REEL_GAP);
-        const reel = new Reel({ x, y: startY, textures: texArray });
+        const reel = new Reel({
+            x, y: startY,
+            textures: texArray,
+            texturesByLetter: normalTexMap
+        });
         app.stage.addChild(reel.view);
         reels.push(reel);
     }
@@ -36,42 +69,67 @@ async function boot(): Promise<void> {
 
     let busy = false;
 
-    btn.on('pointertap', () => {
+    (btn as any).on('pointertap', () => {
         if (busy) return;
         busy = true;
         btn.setEnabled(false);
 
-        reels.forEach(r => r.setSpeed(1.4)); // px/ms
+        const outcome = generateOutcome(); // columns: string[3][3]
+        reels.forEach(r => r.setSpeed(1.3));
 
+        const base = 1000;
+        const gap = 300;
 
-        const base = 1000; // ms until first stop
-        const gap = 300;   // ms between stops
         reels.forEach((r, i) => {
+            r.plan(outcome[i]);
+
             setTimeout(() => {
-                r.stop();                 // snap to grid
+                r.stop();
+
                 if (i === reels.length - 1) {
-                    // finished
                     busy = false;
                     btn.setEnabled(true);
-                    // next step: evaluate wins
+
+                    const result = evaluate(outcome);
+                    if (result.wins.length) {
+                        result.wins.forEach(w => {
+                            w.positions.forEach(pos => {
+                                // visible sprite at that grid cell
+                                const spr = reels[pos.c].getVisibleSprite(pos.r) as Sprite & { letter?: string };
+                                pulseSprite(spr, 900);
+                            });
+                        });
+                    }
                 }
             }, base + i * gap);
         });
     });
 
+
     app.ticker.add((ticker: Ticker) => {
-        reels.forEach(r => r.update(ticker.deltaMS, texArray));
-    });
+        reels.forEach(r => r.update(ticker.deltaMS));
 
 
-    window.addEventListener('resize', () => {
-        const nx = (app.renderer.width - boardW) / 2;
-        const ny = (app.renderer.height - boardH) / 2;
-        reels.forEach((r, i) => {
-            (r as any).view.children.forEach((child: any) => {
-            });
-        });
-        btn.position.set((app.renderer.width - 180) / 2, ny + boardH + 24);
+        for (let i = 0; i < pulses.length; i++) {
+            const p = pulses[i];
+            p.t += ticker.deltaMS;
+            const k = Math.min(1, p.t / p.dur); // 0..1
+            const s = BASE_SCALE * (1 + Math.sin(k * Math.PI) * PULSE_EXTRA);
+            p.spr.scale.set(s);
+            p.spr.alpha = 0.95 + Math.sin(k * Math.PI) * 0.05;
+
+            if (p.t >= p.dur) {
+                // restore normal texture + reset transforms
+                const letter = p.spr.letter as keyof TextureMap | undefined;
+                if (letter && normalTexMap && normalTexMap[letter]) {
+                    p.spr.texture = normalTexMap[letter];
+                }
+                p.spr.scale.set(BASE_SCALE);
+                p.spr.alpha = 1;
+                pulses.splice(i, 1);
+                i--;
+            }
+        }
     });
 }
 
